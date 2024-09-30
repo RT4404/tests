@@ -1,1 +1,3 @@
-current benchmarks
+NOTE:
+TRA and BFS are already adapted for vortex.
+This leaves SLA, JPEG, and LPS.
