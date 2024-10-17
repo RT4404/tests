@@ -78,10 +78,15 @@ parse_args() {
             --dcache_mreq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_MREQ_SIZE=${i#*=}") ;;
             --l2_mreq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL2_MREQ_SIZE=${i#*=}") ;;
             --l3_mreq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL3_MREQ_SIZE=${i#*=}") ;;
-            --smem_banks=*) CONFIGS=$(add_option "$CONFIGS" "DSMEM_NUM_BANKS=${i#*=}") ;;
-            --l2_banks=*) CONFIGS=$(add_option "$CONFIGS" "DL2_NUM_BANKS=${i#*=}") ;;
-            --l3_banks=*) CONFIGS=$(add_option "$CONFIGS" "DL3_NUM_BANKS=${i#*=}") ;;
+            --smem_banks=*) CONFIGS=$(add_option "$CONFIGS" "-DSMEM_NUM_BANKS=${i#*=}") ;;
+            --l2_banks=*) CONFIGS=$(add_option "$CONFIGS" "-DL2_NUM_BANKS=${i#*=}") ;;
+            --l3_banks=*) CONFIGS=$(add_option "$CONFIGS" "-DL3_NUM_BANKS=${i#*=}") ;;
             --mem_block_size=*) CONFIGS=$(add_option "$CONFIGS" "-DMEM_BLOCK_SIZE=${i#*=}") ;;
+            --mem_addr_width=*) CONFIGS=$(add_option "$CONFIGS" "-DMEM_ADDR_WIDTH=${i#*=}") ;;
+            --icache_mshr_size=*) CONFIGS=$(add_option "$CONFIGS" "-DICACHE_MSHR_SIZE=${i#*=}") ;;
+            --dcache_mshr_size=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_MSHR_SIZE=${i#*=}") ;;
+            --l2_mshr_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL2_MSHR_SIZE=${i#*=}") ;;
+            --l3_mshr_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL3_MSHR_SIZE=${i#*=}") ;;
             --debug=*)  DEBUG=1; DEBUG_LEVEL=${i#*=} ;;
             --scope)    SCOPE=1; ;;
             --args=*)   HAS_ARGS=1; ARGS=${i#*=} ;;
