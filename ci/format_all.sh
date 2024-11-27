@@ -1,92 +1,104 @@
 #!/bin/bash
 
-# Specify the folder containing the logfiles
-folder="results_20241030_212305"  # Replace with your target folder
+# Check if folders and statistic name are provided
+if [ -z "$1" ] || [ -z "$2" ]; then
+    echo "Usage: $0 <folders> <statistic_name>"
+    echo "Example: $0 \"baseline,cores\" IPC"
+    exit 1
+fi
 
-# Define the consolidated output file
-output_file="consolidated_results.csv"
-echo -n > "$output_file"  # Clear the file if it exists
+# Inputs
+folders="$1"
+statistic="$2"
+base_results_dir="organized_results"
+summary_file="$base_results_dir/${statistic}_summary.csv"
 
-# Associative array to store metrics by logfile
-declare -A metrics
+# Create the base results directory if it doesn't exist
+mkdir -p "$base_results_dir"
+echo "Logfile,$statistic,Status" > "$summary_file"  # Initialize CSV with header
 
-# Array to keep track of unique metric names
-unique_metrics=()
-column_headers=()
+# Split the input folders by comma
+IFS=',' read -r -a folder_array <<< "$folders"
 
-# Loop through each .log file in the specified folder
-for logfile in "$folder"/*.log; do
-    # Extract the test name from the logfile name (e.g., logfile1)
-    test_name=$(basename "$logfile" .log)
-    column_headers+=("$test_name")
+# Function to locate folders dynamically
+find_folder_path() {
+    local folder_name="$1"
+    find RESULTS/ -type d -name "$folder_name" 2>/dev/null | head -n 1
+}
 
-    # Read each "PERF:" line from the logfile
-    while IFS= read -r line; do
-        if [[ "$line" == PERF:* ]]; then
-            # Remove the "PERF: " prefix
-            line_content="${line#PERF: }"
-            
-            # Check if the line contains "instrs", "cycles", and "IPC" together
-            if [[ "$line_content" =~ instrs=.*cycles=.*IPC=.* ]]; then
-                # Split the prefix from the metrics (e.g., "core3: instrs=..." becomes "core3:" and the rest)
-                prefix=$(echo "$line_content" | sed -E 's/([^ ]*): .*/\1/')
-                metrics_part=$(echo "$line_content" | sed -E 's/[^ ]*: (.*)/\1/')
-                
-                # Split the metrics part by commas into individual metrics
-                IFS=',' read -ra metrics_array <<< "$metrics_part"
-                
-                for metric_pair in "${metrics_array[@]}"; do
-                    # Extract each metric name and numeric value only
-                    metric_name=$(echo "$metric_pair" | sed -E 's/([^=]+)=.*/\1/' | xargs)
-                    metric_value=$(echo "$metric_pair" | sed -E 's/^[^=]+=([0-9]+(\.[0-9]+)?).*/\1/' | xargs)
-                    
-                    # Combine prefix with metric name if the prefix exists
-                    full_metric_name="$metric_name"
-                    if [[ "$prefix" != "$line_content" ]]; then
-                        full_metric_name="$prefix: $metric_name"
+# Track failed tests
+failed_tests=()
+
+# Iterate through the specified folders
+for folder in "${folder_array[@]}"; do
+    folder_path=$(find_folder_path "$folder")
+    if [ -z "$folder_path" ]; then
+        echo "Warning: Folder '$folder' not found in RESULTS/. Skipping."
+        continue
+    fi
+
+    echo "Processing folder: $folder_path"
+
+    # Find all .log files in the folder
+    for logfile in "$folder_path"/*.log; do
+        if [ ! -f "$logfile" ]; then
+            echo "No log files found in '$folder_path'. Skipping."
+            continue
+        fi
+
+        test_name=$(basename "$logfile" .log)
+        metric_value=""
+        status="Success"
+
+        # Read each line from the logfile
+        while IFS= read -r line; do
+            if [[ "$line" =~ [Ff]ailed|[Ee]rror ]]; then
+                status="Failed"
+                failed_tests+=("$test_name ($folder)")
+                break
+            fi
+
+            if [[ "$line" == PERF:* ]]; then
+                line_content="${line#PERF: }"
+
+                # Handle special cases for "instrs", "cycles", and "IPC"
+                if [[ "$statistic" == "IPC" || "$statistic" == "instrs" || "$statistic" == "cycles" ]]; then
+                    if [[ "$line_content" =~ instrs=.*cycles=.*IPC=.* ]]; then
+                        case "$statistic" in
+                            "instrs") metric_value=$(echo "$line_content" | grep -o "instrs=[0-9-]*\(\.[0-9]*\)\?" | sed "s/instrs=//") ;;
+                            "cycles") metric_value=$(echo "$line_content" | grep -o "cycles=[0-9-]*\(\.[0-9]*\)\?" | sed "s/cycles=//") ;;
+                            "IPC") metric_value=$(echo "$line_content" | grep -o "IPC=[0-9-]*\(\.[0-9]*\)\?" | sed "s/IPC=//") ;;
+                        esac
+                        break
                     fi
-                    
-                    # Store each metric as a separate entry
-                    metrics["$full_metric_name,$test_name"]="$metric_value"
-                    
-                    # Add to unique metrics if it's a new metric
-                    if [[ ! " ${unique_metrics[@]} " =~ " ${full_metric_name} " ]]; then
-                        unique_metrics+=("$full_metric_name")
+                else
+                    if [[ "$line_content" =~ $statistic=.* ]]; then
+                        metric_value=$(echo "$line_content" | grep -o "$statistic=[0-9-]*\(\.[0-9]*\)\?" | sed "s/$statistic=//")
+                        break
                     fi
-                done
-            else
-                # For other lines, capture the metric name and numeric value as before
-                metric_name=$(echo "$line_content" | sed -E 's/([^=]+)=.*/\1/' | xargs)
-                metric_value=$(echo "$line_content" | sed -E 's/^[^=]+=([0-9]+(\.[0-9]+)?).*/\1/' | xargs)
-                
-                # Store the metric in the associative array
-                metrics["$metric_name,$test_name"]="$metric_value"
-                
-                # Add to unique metrics if it's a new metric
-                if [[ ! " ${unique_metrics[@]} " =~ " ${metric_name} " ]]; then
-                    unique_metrics+=("$metric_name")
                 fi
             fi
+        done < "$logfile"
+
+        # Add the result to the summary file
+        if [ "$status" == "Failed" ]; then
+            echo "$test_name,,Failed" >> "$summary_file"
+        elif [[ -n "$metric_value" ]]; then
+            echo "$test_name,$metric_value,Success" >> "$summary_file"
+        else
+            echo "$test_name,,No Data" >> "$summary_file"
         fi
-    done < "$logfile"
-done
-
-# Output header row (Metric, then each logfile name)
-echo -n "Metric" > "$output_file"
-for col in "${column_headers[@]}"; do
-    echo -n ",$col" >> "$output_file"
-done
-echo >> "$output_file"
-
-# Output each metric row, with values for each logfile
-for metric in "${unique_metrics[@]}"; do
-    echo -n "$metric" >> "$output_file"
-    for col in "${column_headers[@]}"; do
-        # Print value if it exists, otherwise leave blank, and wrap in quotes
-        value="${metrics[$metric,$col]}"
-        echo -n ",${value:-}" >> "$output_file"
     done
-    echo >> "$output_file"
 done
 
-echo "Consolidated results saved in $output_file"
+# Report failed tests
+if [ "${#failed_tests[@]}" -gt 0 ]; then
+    echo "The following tests failed:"
+    for failed_test in "${failed_tests[@]}"; do
+        echo "- $failed_test"
+    done
+else
+    echo "No tests failed."
+fi
+
+echo "Summary for $statistic saved in $summary_file"
