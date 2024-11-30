@@ -65,8 +65,8 @@ mkdir -p "$ROOT_DIR"
 
 # Last configurations
 rm -f blackbox.*.cache
-XLEN=${XLEN:=64}
-XSIZE=$((XLEN / 8))
+XLEN="64"
+XSIZE="8"
 
 ##################
 # BASELINE TESTS #
