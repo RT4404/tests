@@ -71,29 +71,35 @@ parse_args() {
             # cache configs
             --l2cache)  CONFIGS=$(add_option "$CONFIGS" "-DL2_ENABLE") ;;
             --l3cache)  CONFIGS=$(add_option "$CONFIGS" "-DL3_ENABLE") ;;
-            --l1cache_off) CONFIGS=$(add_option "$CONFIGS" "-DL1_DISABLE");;
+            --l1cache_disable) CONFIGS=$(add_option "$CONFIGS" "-DL1_DISABLE");;
             
+            --l1_line_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL1_LINE_SIZE=${i#*=}") ;;
+
             --num_icaches=*) CONFIGS=$(add_option "$CONFIGS" "-DNUM_ICACHES=${i#*=}") ;;
             --icache_size=*) CONFIGS=$(add_option "$CONFIGS" "-DICACHE_SIZE=${i#*=}") ;;
-            --icache_ways=*) CONFIGS=$(add_option "$CONFIGS" "-DICACHE_NUM_WAYS=${i#*=}") ;;
+            --icache_num_ways=*) CONFIGS=$(add_option "$CONFIGS" "-DICACHE_NUM_WAYS=${i#*=}") ;;
             --icache_mreq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DICACHE_MREQ_SIZE=${i#*=}") ;;
             --icache_mshr_size=*) CONFIGS=$(add_option "$CONFIGS" "-DICACHE_MSHR_SIZE=${i#*=}") ;;
             --icache_crsq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DICACHE_CRSQ_SIZE=${i#*=}") ;;
             --icache_mrsq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DICACHE_MRSQ_SIZE=${i#*=}") ;;
-            
+            --icache_disable) CONFIGS=$(add_option "$CONFIGS" "--DICACHE_DISABLE") ;;
+
             --num_dcaches=*) CONFIGS=$(add_option "$CONFIGS" "-DNUM_DCACHES=${i#*=}") ;;
             --dcache_writeback=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_WRITEBACK=${i#*=}") ;;
             --dcache_size=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_SIZE=${i#*=}") ;;
-            --dcache_ways=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_NUM_WAYS=${i#*=}") ;;
+            --dcache_num_ways=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_NUM_WAYS=${i#*=}") ;;
             --dcache_mreq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_MREQ_SIZE=${i#*=}") ;;  
             --dcache_mshr_size=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_MSHR_SIZE=${i#*=}") ;;
             --dcache_crsq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_CRSQ_SIZE=${i#*=}") ;;
             --dcache_mrsq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_MRSQ_SIZE=${i#*=}") ;;
-            --dcache_banks=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_NUM_BANKS=${i#*=}") ;;
-            
+            --dcache_num_banks=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_NUM_BANKS=${i#*=}") ;;
+            --dcache_repl_policy=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_REPL_POLICY=${i#*=}") ;;
+            --dcache_dirtybytes=*) CONFIGS=$(add_option "$CONFIGS" "-DDCACHE_DIRTYBYTES=${i#*=}") ;;
+            --dcache_disable) CONFIGS=$(add_option "$CONFIGS" "--DDCACHE_DISABLE") ;;
+
             --l2_writeback=*) CONFIGS=$(add_option "$CONFIGS" "-DL2_WRITEBACK=${i#*=}") ;;
             --l2_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL2_CACHE_SIZE=${i#*=}") ;;
-            --l2_ways=*) CONFIGS=$(add_option "$CONFIGS" "-DL2_NUM_WAYS=${i#*=}") ;;
+            --l2_num_ways=*) CONFIGS=$(add_option "$CONFIGS" "-DL2_NUM_WAYS=${i#*=}") ;;
             --l2_mreq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL2_MREQ_SIZE=${i#*=}") ;;
             --l2_mshr_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL2_MSHR_SIZE=${i#*=}") ;;
             --l2_crsq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL2_CRSQ_SIZE=${i#*=}") ;;
@@ -102,7 +108,7 @@ parse_args() {
             
             --l3_writeback=*) CONFIGS=$(add_option "$CONFIGS" "-DL3_WRITEBACK=${i#*=}") ;;
             --l3_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL3_CACHE_SIZE=${i#*=}") ;;
-            --l3_ways=*) CONFIGS=$(add_option "$CONFIGS" "-DL3_NUM_WAYS=${i#*=}") ;;
+            --l3_num_ways=*) CONFIGS=$(add_option "$CONFIGS" "-DL3_NUM_WAYS=${i#*=}") ;;
             --l3_mreq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL3_MREQ_SIZE=${i#*=}") ;;
             --l3_mshr_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL3_MSHR_SIZE=${i#*=}") ;;
             --l3_crsq_size=*) CONFIGS=$(add_option "$CONFIGS" "-DL3_CRSQ_SIZE=${i#*=}") ;;
@@ -126,6 +132,7 @@ parse_args() {
             
             # local memory configs
             --lmem_enable) CONFIGS=$(add_option "$CONFIGS" "-DLMEM_ENABLE") ;;
+            --lmem_disable) CONFIGS=$(add_option "$CONFIGS" "-DLMEM_DISABLE") ;;
             --lmem_base_addr=*) CONFIGS=$(add_option "$CONFIGS" "-DLMEM_BASE_ADDR=${i#*=}") ;;
             --lmem_log_size=*) CONFIGS=$(add_option "$CONFIGS" "-DLMEM_LOG_SIZE=${i#*=}") ;;
             --lmem_num_banks=*) CONFIGS=$(add_option "$CONFIGS" "-DLMEM_NUM_BANKS=${i#*=}") ;;
@@ -192,6 +199,17 @@ parse_args() {
             --fpu_dpi) CONFIGS=$(add_option "$CONFIGS" "-DIDIV_DPI") ;;
             --dpi_disable) CONFIGS=$(add_option "$CONFIGS" "-DDPI_DISABLE") ;;
             
+            # fpu_fpnew
+            --fpu_fpnew) CONFIGS=$(add_option "$CONFIGS" "-DFPU_FPNEW") ;;
+
+            # platform
+            --platform_memory_banks=*) CONFIGS=$(add_option "$CONFIGS" "-DPLATFORM_MEMORY_BANKS=${i#*=}") ;;
+            --platform_memory_addr_width=*) CONFIGS=$(add_option "$CONFIGS" "-DPLATFORM_MEMORY_ADDR_WIDTH=${i#*=}") ;;
+            --platform_memory_interleave=*) CONFIGS=$(add_option "$CONFIGS" "-DPLATFORM_MEMORY_INTERLEAVE=${i#*=}") ;;
+
+            # verilator
+            --verilator_reset_value=*) CONFIGS=$(add_option "$CONFIGS" "-DVERILATOR_RESET_VALUE=${i#*=}") ;;
+
             # I/O configs
             --io_cout_size=*) CONFIGS=$(add_option "$CONFIGS" "-DIO_COUT_SIZE=${i#*=}") ;;
             --io_mpm_size=*) CONFIGS=$(add_option "$CONFIGS" "-DIO_MPM_SIZE=${i#*=}") ;;
