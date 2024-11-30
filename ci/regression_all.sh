@@ -65,13 +65,51 @@ mkdir -p "$ROOT_DIR"
 
 # Last configurations
 rm -f blackbox.*.cache
-XLEN=${XLEN:=@XLEN@}
+XLEN=${XLEN:=64}
 XSIZE=$((XLEN / 8))
+
+##################
+# BASELINE TESTS #
+##################
+echo "===========Testing baselines==========="
+DIR="$ROOT_DIR/Baseline/demo"
+run_test "--driver=rtlsim --app=demo" "$DIR"
+run_test "--driver=simx --app=demo" "$DIR"
+
+DIR="$ROOT_DIR/Baseline/sgemmx"
+run_test "--driver=rtlsim --app=sgemmx" "$DIR"
+run_test "--driver=simx --app=sgemmx" "$DIR"
+
+DIR="$ROOT_DIR/Baseline/io_addr"
+run_test "--driver=rtlsim --app=io_addr" "$DIR"
+run_test "--driver=simx --app=io_addr" "$DIR"
+
+DIR="$ROOT_DIR/Baseline/mstress"
+run_test "--driver=rtlsim --app=mstress" "$DIR"
+run_test "--driver=simx --app=mstress" "$DIR"
+run_test "--driver=opae --app=mstress" "$DIR"
+run_test "--driver=xrt --app=mstress" "$DIR"
+
+DIR="$ROOT_DIR/Baseline/diverge"
+run_test "--driver=rtlsim --app=diverge" "$DIR"
+run_test "--driver=simx --app=diverge" "$DIR"
+run_test "--driver=opae --app=diverge" "$DIR"
+run_test "--driver=xrt --app=diverge" "$DIR"
+
+DIR="$ROOT_DIR/Baseline/vecaddx"
+run_test "--driver=rtlsim --app=vecaddx" "$DIR"
+run_test "--driver=simx --app=vecaddx" "$DIR"
+
+DIR="$ROOT_DIR/Baseline/dogfood"
+run_test "--driver=rtlsim --app=dogfood" "$DIR"
+run_test "--driver=simx --app=dogfood" "$DIR"
+run_test "--driver=opae --app=dogfood" "$DIR"
+run_test "--driver=xrt --app=dogfood" "$DIR"
 
 #########################
 # CACHE CONFIGURATIONS #
 #########################
-echo "===========Testing basic configurations 1==========="
+echo "===========Testing cache configurations==========="
 
 DIR="$ROOT_DIR/Cache_configurations/disable_local_memory"
 run_test "--driver=rtlsim --app=demo --perf=1 --lmem_disable" "$DIR"
@@ -247,4 +285,5 @@ DIR="$ROOT_DIR/Stress_configurations/verilator_reset_values"
 run_test "--driver=opae --cores=2 --clusters=2 --l2cache --l3cache --app=dogfood --verilator_reset_value=1 --socket_size=1 --dcache_writeback=1 --l2_writeback=1 --l3_writeback=1" "$DIR"
 run_test "--driver=xrt --app=sgemmx --args=\"-n128\" --verilator_reset_value=1 --l2cache" "$DIR"
 
-echo "===========Stress Tests Completed==========="
+echo "===benchmarking complete==="
+
